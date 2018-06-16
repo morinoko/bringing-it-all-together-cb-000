@@ -52,6 +52,24 @@ class Dog
     dog.save
   end
   
+  def self.find_or_create_by(name:, breed:)
+    sql = <<-SQL
+      SELECT *
+      FROM dogs
+      WHERE name = ?
+      AND breed = ?;
+    SQL
+    
+    # Check if dog exists with the given name and breed
+    dog_data = DB[:conn].execute(sql, name, breed).first
+    
+    if dog_data
+      self.new_from_db(dog_data)
+    else
+      self.create(name: name, breed: breed)
+    end
+  end
+  
   def self.new_from_db(row)
     id = row[0]
     name = row[1]
@@ -80,24 +98,6 @@ class Dog
     
     dog_data = DB[:conn].execute(sql, name).first
     self.new_from_db(dog_data)
-  end
-  
-  def self.find_or_create_by(name:, breed:)
-    sql = <<-SQL
-      SELECT *
-      FROM dogs
-      WHERE name = ?
-      AND breed = ?;
-    SQL
-    
-    # Check if dog exists with the given name and breed
-    dog_data = DB[:conn].execute(sql, name, breed).first
-    
-    if dog_data
-      self.new_from_db(dog_data)
-    else
-      self.create(name: name, breed: breed)
-    end
   end
   
   def update
