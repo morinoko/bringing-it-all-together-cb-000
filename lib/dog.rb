@@ -35,21 +35,39 @@ class Dog
       self.update
     else
       sql = <<-SQL
-        INSERT INTO dogs
-        (name, breed)
+        INSERT INTO dogs (name, breed)
         VALUES (?, ?);
       SQL
       
       DB[:conn].execute(sql, @name, @breed)
       
       @id = DB[:conn].execute("SELECT last_insert_rowid() FROM dogs;")[0][0]
-      self
     end
+    
+    self
   end
   
   def self.create(name:, breed:)
     dog = self.new(name: name, breed: breed)
     dog.save
+  end
+  
+  def self.find_or_create_by(name:, breed:)
+    sql = <<-SQL
+      SELECT *
+      FROM dogs
+      WHERE name = ?
+      AND breed = ?;
+    SQL
+    
+    # Check if dog exists with the given name and breed
+    dog_data = DB[:conn].execute(sql, name, breed).first
+    
+    if dog_data
+      self.new_from_db(dog_data)
+    else
+      self.create(name: name, breed: breed)
+    end
   end
   
   def self.new_from_db(row)
@@ -80,24 +98,6 @@ class Dog
     
     dog_data = DB[:conn].execute(sql, name).first
     self.new_from_db(dog_data)
-  end
-  
-  def self.find_or_create_by(name:, breed:)
-    sql = <<-SQL
-      SELECT *
-      FROM dogs
-      WHERE name = ?
-      AND breed = ?;
-    SQL
-    
-    # Check if dog exists with the given name and breed
-    dog_data = DB[:conn].execute(sql, name, breed).first
-    
-    if dog_data
-      self.new_from_db(dog_data)
-    else
-      self.create(name: name, breed: breed)
-    end
   end
   
   def update
